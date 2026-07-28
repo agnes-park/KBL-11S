@@ -18,8 +18,8 @@
 library(dplyr); library(readr)
 set.seed(1)
 
-SEASON_LABEL <- "2024_25"
-CLUTCH_DEF   <- "clutch_std"   # clutch_std / clutch_2poss / clutch_strict
+SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")
+CLUTCH_DEF   <- Sys.getenv("CLUTCH_DEF", "clutch_std")   # clutch_std / clutch_2poss / clutch_strict
 N_PERM       <- 2000
 
 sh <- read_csv(sprintf("KBL_%s_shots_scored.csv", SEASON_LABEL), show_col_types = FALSE)

@@ -15,7 +15,7 @@
 
 library(dplyr); library(readr); library(stringr)
 
-SEASON_LABEL <- "2024_25"
+SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")
 st  <- read_csv(sprintf("KBL_%s_state_table.csv", SEASON_LABEL), show_col_types = FALSE)
 mdl <- readRDS("KBL_wp_model.rds"); sigma <- mdl$sigma; beta <- mdl$beta
 

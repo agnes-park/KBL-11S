@@ -35,8 +35,20 @@ Rscript ../R/05_clutch_analysis.R # 클러치 존재검정 + 선수 순위
 필요 패키지: `install.packages(c("dplyr","stringr","readr","tidyr"))`
 (수집 스크립트는 `httr2","jsonlite","tibble"` 추가)
 
+## 세 시즌 통합 (구현 완료)
+
+```bash
+./run_multiseason.sh        # 3시즌 전처리(01) 후 통합 분석(10) 실행
+# 리포트: docs/multiseason_findings.md
+```
+
+리그 기준선(WP σ·β, OReb, xG)은 세 시즌 **풀링**, 선수 단위는 **선수×시즌**으로 유지해
+시즌 간 지속성을 검정한다. 각 스크립트는 `SEASON_LABEL` 환경변수로 시즌을 바꿀 수 있다
+(예: `SEASON_LABEL=2025_26 Rscript ../R/01_preprocess.R`).
+
 ## 현재 상태
 
-한 시즌(2024-25)·coarse xG 기준 파이프라인 완주. 클러치 실력의 통계적 증거는
-아직 없음(선수당 클러치 슛 중앙값 7개로 표본 부족). 다음 단계는 세 시즌 통합과
-수동 xG 격상 — 자세한 건 `CLAUDE.md` 참고.
+세 시즌(2023-24·2024-25·2025-26)·coarse xG 통합 완료. **반복 가능한 클러치 실력의
+통계적 증거는 없음** — 풀링 존재검정은 한계적(순열 p≈0.03)이나 시즌 간 지속성이 없다
+(year-to-year r≈0.02). 검정력을 3배로 키운 뒤에도 신호가 지속성 검정을 통과하지 못한다.
+다음 지렛대는 표본이 아니라 **수동 xG(슛 난이도 보정)** — 자세한 건 `CLAUDE.md` 참고.

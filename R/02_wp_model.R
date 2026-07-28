@@ -15,7 +15,7 @@
 
 library(dplyr); library(readr)
 
-SEASON_LABEL <- "2024_25"
+SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")
 INPUT   <- sprintf("KBL_%s_state_table.csv", SEASON_LABEL)
 OUTPUT  <- sprintf("KBL_%s_state_wp.csv", SEASON_LABEL)
 

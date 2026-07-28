@@ -13,7 +13,7 @@
 
 library(dplyr); library(stringr); library(readr); library(tidyr)
 
-SEASON_LABEL <- "2024_25"   # ← 2025_26 등으로 변경
+SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")   # ← 환경변수 또는 여기서 변경
 INPUT        <- sprintf("KBL_%s_regular_season_full_pbp.csv", SEASON_LABEL)
 
 STATE_FILE  <- sprintf("KBL_%s_state_table.csv", SEASON_LABEL)

@@ -19,7 +19,7 @@
 
 library(dplyr); library(readr)
 
-SEASON_LABEL <- "2024_25"
+SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")
 sh <- read_csv(sprintf("KBL_%s_shots_leverage.csv", SEASON_LABEL), show_col_types = FALSE)
 
 # ── 리그 기준선 성공률 (상황 중립, 슛값만) ──────────────────────────────────
