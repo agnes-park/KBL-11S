@@ -11,6 +11,7 @@ data/*_clutch_players.csv
 data/KBL_pooled_*.csv
 data/KBL_multiseason_*.csv
 data/KBL_allseasons_*.csv
+data/KBL_clutchscore_*.csv
 
 # Model objects
 *.rds
