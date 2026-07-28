@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KBL 클러치 슛 주석기</title>
+<style>
+  :root{
+    --bg:#14171a; --panel:#1c2024; --line:#2c3238; --ink:#e8eaed; --mut:#9aa2ab;
+    --accent:#4a9eff; --coral:#e0715a; --gray:#7c8894; --teal:#3fb8a0; --amber:#e0a13f;
+    --ok:#4fbf6b; --warn:#e0a13f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    font-size:14px;line-height:1.5}
+  header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{font-size:15px;font-weight:600;margin:0}
+  header .sp{flex:1}
+  button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);
+    border-radius:7px;padding:7px 12px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.on{background:var(--accent);border-color:var(--accent);color:#06131f;font-weight:600}
+  .file{position:relative;overflow:hidden;display:inline-block}
+  .file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  main{display:grid;grid-template-columns:300px 1fr;gap:16px;padding:16px;max-width:1100px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .meta dt{color:var(--mut);font-size:12px;margin-top:8px}
+  .meta dd{margin:2px 0 0;font-size:15px}
+  .big{font-size:20px;font-weight:600}
+  .progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
+  .progress i{display:block;height:100%;background:var(--ok);width:0}
+  .courtwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+  svg.court{background:#0f1418;border:1px solid var(--line);border-radius:12px;cursor:crosshair}
+  .readout{color:var(--mut);font-size:13px;min-height:20px}
+  .readout b{color:var(--ink)}
+  .group{margin-top:14px}
+  .group h3{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  .nav{display:flex;gap:8px;align-items:center;margin-top:16px}
+  .hint{color:var(--mut);font-size:12px}
+  input[type=text]{width:100%;background:#0f1418;border:1px solid var(--line);border-radius:7px;
+    color:var(--ink);padding:7px 9px;font:inherit;margin-top:4px}
+  .pill{font-size:12px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+  .pill.done{color:var(--ok);border-color:var(--ok)}
+  .empty{color:var(--mut);padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>KBL 클러치 슛 주석기</h1>
+  <span class="pill" id="status">CSV를 불러오세요</span>
+  <span class="sp"></span>
+  <span class="file"><button>워크리스트 불러오기</button><input type="file" id="load" accept=".csv"></span>
+  <span class="file"><button>진행분 이어받기</button><input type="file" id="resume" accept=".csv"></span>
+  <button id="export">주석 CSV 내보내기</button>
+</header>
+
+<main id="app" style="display:none">
+  <section class="card">
+    <div class="meta">
+      <div class="big"><span id="idx">–</span> / <span id="total">–</span></div>
+      <div class="progress"><i id="bar"></i></div>
+      <dl>
+        <dt>경기</dt><dd id="m-game">–</dd>
+        <dt>날짜</dt><dd id="m-date">–</dd>
+        <dt>쿼터 · 남은시간</dt><dd id="m-clock" class="big">–</dd>
+        <dt>슈터</dt><dd id="m-shooter">–</dd>
+        <dt>슛값</dt><dd id="m-value">–</dd>
+      </dl>
+      <div class="group">
+        <h3>영상 링크/타임스탬프</h3>
+        <input type="text" id="video" placeholder="예: https://... 또는 03:41">
+      </div>
+      <div class="hint" style="margin-top:12px">
+        결과(성공/실패)는 편향 방지를 위해 숨겨져 있어요.<br>
+        릴리스 순간 기준으로 코딩하세요.
+      </div>
+    </div>
+  </section>
+
+  <section class="card courtwrap">
+    <svg class="court" id="court" width="460" height="440" viewBox="0 0 460 440">
+      <!-- lines -->
+      <path d="M25 410 H435" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M25 410 V150" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M435 410 V150" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M25 150 H435" stroke="#2a333b" stroke-width="1" stroke-dasharray="4 4" fill="none"/>
+      <rect x="157" y="290" width="146" height="120" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <circle cx="230" cy="290" r="38" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M208 392 H252" stroke="#3a444d" stroke-width="1.5" fill="none"/>
+      <circle cx="230" cy="384" r="7" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M60 410 V330" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M400 410 V330" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <path d="M60 330 Q230 150 400 330" stroke="#3a444d" stroke-width="1" fill="none"/>
+      <!-- marker -->
+      <circle id="marker" cx="0" cy="0" r="7" fill="#4a9eff" stroke="#fff" stroke-width="1.5" style="display:none"/>
+    </svg>
+    <div class="readout" id="readout">코트를 클릭해 슛 위치를 찍으세요</div>
+
+    <div style="width:100%">
+      <div class="group">
+        <h3>컨테스트 (0–3, 키보드 0–3)</h3>
+        <div class="row" id="contest">
+          <button data-v="0">0 오픈</button>
+          <button data-v="1">1 가드</button>
+          <button data-v="2">2 컨테스트</button>
+          <button data-v="3">3 헤비</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>슛 타입</h3>
+        <div class="row" id="stype">
+          <button data-v="layup">레이업</button>
+          <button data-v="dunk">덩크</button>
+          <button data-v="jumper">점프슛</button>
+          <button data-v="pullup">풀업</button>
+          <button data-v="catch">캐치앤슛</button>
+          <button data-v="floater">플로터</button>
+          <button data-v="hook">훅</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>샷클락 구간</h3>
+        <div class="row" id="sclock">
+          <button data-v="early">초반</button>
+          <button data-v="mid">중반</button>
+          <button data-v="late">막판</button>
+          <button data-v="buzzer">버저</button>
+          <button data-v="unknown">불명</button>
+        </div>
+      </div>
+      <div class="nav">
+        <button id="prev">← 이전</button>
+        <button id="next">다음 →</button>
+        <button id="nextEmpty">미완료로 점프</button>
+        <span class="hint">← → 이동 · 0–3 컨테스트 · 코트 클릭 위치</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="empty" id="empty">상단에서 워크리스트 CSV를 불러오면 시작해요.</div>
+
+<script>
+// ---- 코트 좌표계 (px → ft) ----
+const PX_L=25, PPF=8.2, PX_BASE=410, HOOP=[25,5.25];   // 코트폭 50ft, 8.2px/ft
+function pxToFt(px,py){ return [ (px-PX_L)/PPF, (PX_BASE-py)/PPF ]; }
+function zoneOf(fx, fbase, dist){
+  const dx=fx-25;
+  if(dist<=4) return "rim";
+  if(Math.abs(dx)<=8 && fbase<=19) return "paint";
+  if(dist>=22){
+    if(fbase<=9 && Math.abs(dx)>17) return "corner3";
+    if(Math.abs(dx)<=8) return "top3";
+    return "wing3";
+  }
+  return "mid";
+}
+
+// ---- 최소 CSV 파서/직렬화 (BOM·따옴표 처리) ----
+function parseCSV(text){
+  text=text.replace(/^\uFEFF/,"");
+  const rows=[]; let f="",row=[],q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else{ if(c==='"')q=true; else if(c===','){row.push(f);f="";}
+      else if(c==='\n'){row.push(f);rows.push(row);f="";row=[];}
+      else if(c==='\r'){} else f+=c; } }
+  if(f!==""||row.length){row.push(f);rows.push(row);}
+  const header=rows.shift();
+  return rows.filter(r=>r.length>1||r[0]!=="").map(r=>{const o={};header.forEach((h,j)=>o[h]=r[j]??"");return o;});
+}
+function toCSV(cols,data){
+  const esc=v=>{v=(v==null?"":String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  return "\uFEFF"+cols.join(",")+"\n"+data.map(r=>cols.map(c=>esc(r[c])).join(",")).join("\n");
+}
+
+// ---- 상태 ----
+let rows=[], idx=0, cols=[];
+const EXTRA=["loc_x","loc_y","distance_ft","angle_deg","zone","contest","shot_type","shot_clock_bin","video_url","note"];
+const $=id=>document.getElementById(id);
+
+function loadRows(data){
+  rows=data; idx=0;
+  cols=Object.keys(rows[0]||{});
+  EXTRA.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+  rows.forEach(r=>EXTRA.forEach(c=>{if(r[c]===undefined)r[c]="";}));
+  $("app").style.display=""; $("empty").style.display="none";
+  render(); save();
+}
+function annotatedCount(){return rows.filter(r=>r.contest!==""&&r.contest!=null&&r.loc_x!=="").length;}
+function render(){
+  const r=rows[idx]; if(!r)return;
+  $("idx").textContent=idx+1; $("total").textContent=rows.length;
+  $("m-game").textContent=(r.home_team||"")+" vs "+(r.away_team||"");
+  $("m-date").textContent=r.game_date||"";
+  $("m-clock").textContent=(r.quarter||"")+"  "+(r.clock||"");
+  $("m-shooter").textContent=(r.shooter_kr||"")+" ("+(r.shooter_en||"")+")";
+  $("m-value").textContent=(r.shot_value||"")+"점";
+  $("video").value=r.video_url||"";
+  // marker
+  const mk=$("marker");
+  if(r.loc_x!==""&&r.loc_x!=null){
+    const px=Number(r.loc_x)*PPF+PX_L, py=PX_BASE-Number(r.loc_y)*PPF;
+    mk.setAttribute("cx",px);mk.setAttribute("cy",py);mk.style.display="";
+    $("readout").innerHTML=`<b>${r.zone}</b> · ${r.distance_ft}ft · ${r.angle_deg}°`;
+  }else{mk.style.display="none";$("readout").textContent="코트를 클릭해 슛 위치를 찍으세요";}
+  setActive("contest",r.contest); setActive("stype",r.shot_type); setActive("sclock",r.shot_clock_bin);
+  const done=annotatedCount();
+  $("bar").style.width=(100*done/rows.length)+"%";
+  $("status").textContent=`완료 ${done} / ${rows.length}`;
+  $("status").className="pill"+(done===rows.length?" done":"");
+}
+function setActive(group,val){
+  $(group).querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v==String(val)));
+}
+function save(){ try{localStorage.setItem("kbl_annot",JSON.stringify(rows));}catch(e){} }
+
+// ---- 이벤트 ----
+$("court").addEventListener("click",e=>{
+  const r=rows[idx]; if(!r)return;
+  const svg=$("court"), rect=svg.getBoundingClientRect();
+  const px=(e.clientX-rect.left)*(460/rect.width), py=(e.clientY-rect.top)*(440/rect.height);
+  const [fx,fb]=pxToFt(px,py);
+  const dist=Math.hypot(fx-HOOP[0],fb-HOOP[1]);
+  const ang=Math.atan2(fb-HOOP[1],fx-HOOP[0])*180/Math.PI;
+  r.loc_x=+fx.toFixed(1); r.loc_y=+fb.toFixed(1);
+  r.distance_ft=+dist.toFixed(1); r.angle_deg=+ang.toFixed(0); r.zone=zoneOf(fx,fb,dist);
+  render(); save();
+});
+function bindGroup(group,field){
+  $(group).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    rows[idx][field]=b.dataset.v; render(); save();});
+}
+bindGroup("contest","contest"); bindGroup("stype","shot_type"); bindGroup("sclock","shot_clock_bin");
+$("video").addEventListener("input",e=>{if(rows[idx]){rows[idx].video_url=e.target.value;save();}});
+$("prev").onclick=()=>{if(idx>0){idx--;render();}};
+$("next").onclick=()=>{if(idx<rows.length-1){idx++;render();}};
+$("nextEmpty").onclick=()=>{const n=rows.findIndex((r,i)=>i>idx&&(r.contest===""||r.loc_x===""));
+  if(n>=0){idx=n;render();}else{$("status").textContent="미완료 없음 ✔";}};
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT")return;
+  if(e.key==="ArrowLeft")$("prev").click();
+  else if(e.key==="ArrowRight")$("next").click();
+  else if("0123".includes(e.key)){rows[idx].contest=e.key;render();save();}
+});
+$("load").onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=()=>loadRows(parseCSV(rd.result));rd.readAsText(f,"utf-8");};
+$("resume").onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=()=>loadRows(parseCSV(rd.result));rd.readAsText(f,"utf-8");};
+$("export").onclick=()=>{
+  if(!rows.length){alert("불러온 데이터가 없어요.");return;}
+  const blob=new Blob([toCSV(cols,rows)],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="KBL_clutch_annotations.csv";a.click();
+};
+// 자동 복원 (로컬 실행 시)
+try{const cached=localStorage.getItem("kbl_annot");
+  if(cached){const d=JSON.parse(cached);if(d&&d.length){loadRows(d);}}}catch(e){}
+</script>
+</body>
+</html>

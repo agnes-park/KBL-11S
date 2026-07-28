@@ -1,0 +1,25 @@
+# --- Pipeline-generated artifacts (derived from raw PBP; reproducible) ---
+data/*_state_table.csv
+data/*_shots.csv
+data/*_player_dim.csv
+data/*_state_wp.csv
+data/*_shots_leverage.csv
+data/*_shots_scored.csv
+data/*_clutch_players.csv
+
+# Multi-season (integrated) artifacts
+data/KBL_pooled_*.csv
+data/KBL_multiseason_*.csv
+data/KBL_allseasons_*.csv
+
+# Model objects
+*.rds
+
+# R session cruft
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS / editor
+.DS_Store
+*~
