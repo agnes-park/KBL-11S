@@ -347,5 +347,6 @@ run_crawler <- function() {
 }
 
 # 스크립트를 통째로 실행하면 자동으로 크롤링을 시작합니다.
-# 함수만 불러오고 싶으면 아래 줄을 주석 처리하세요.
-result <- run_crawler()
+# 함수만 불러오고 싶으면(예: 00b_crawl_playoffs.R가 source) 환경변수
+#   KBL_CRAWL_NOAUTORUN=1 을 설정하면 자동 실행을 건너뜁니다.
+if (Sys.getenv("KBL_CRAWL_NOAUTORUN", "") == "") result <- run_crawler()

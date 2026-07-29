@@ -13,6 +13,11 @@ data/KBL_multiseason_*.csv
 data/KBL_allseasons_*.csv
 data/KBL_clutchscore_*.csv
 
+# Crawler raw JSON caches + failure logs
+data/raw/
+data/raw_playoff/
+data/*_collection_failures.csv
+
 # Model objects
 *.rds
 

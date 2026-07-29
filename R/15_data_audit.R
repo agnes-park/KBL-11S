@@ -18,6 +18,8 @@
 library(dplyr); library(stringr); library(readr)
 suppressWarnings(Sys.setlocale("LC_CTYPE", "C.UTF-8"))
 SEASONS <- c("2023_24", "2024_25", "2025_26")
+# 파일 종류: 정규시즌(기본) 또는 플레이오프. KBL_<season>_<KIND>_full_pbp.csv 규칙.
+KIND  <- Sys.getenv("PBP_KIND", "regular_season")   # 예: PBP_KIND=playoff
 norm  <- function(x) sub("\\.0$", "", trimws(as.character(x)))
 pad2  <- function(x) str_pad(norm(x), 2, pad = "0")
 
@@ -26,12 +28,12 @@ report <- c("# KBL 데이터 수집 무결성 감사", "",
 flags_all <- c()
 
 audit_season <- function(S) {
-  pbp <- read_csv(sprintf("KBL_%s_regular_season_full_pbp.csv", S), show_col_types = FALSE,
+  pbp <- read_csv(sprintf("KBL_%s_%s_full_pbp.csv", S, KIND), show_col_types = FALSE,
     col_select = c(n, m, s, a, t, q, c, api_row_order, points, game_id,
                    home_team_code, away_team_code, official_home_score, official_away_score, e)) %>%
     mutate(a = str_pad(norm(a), 3, pad = "0"), t = pad2(t),
            hc = pad2(home_team_code), ac = pad2(away_team_code))
-  sch <- read_csv(sprintf("KBL_%s_regular_season_schedule.csv", S), show_col_types = FALSE) %>%
+  sch <- read_csv(sprintf("KBL_%s_%s_schedule.csv", S, KIND), show_col_types = FALSE) %>%
     transmute(game_id, scoreH = as.integer(scoreH), scoreA = as.integer(scoreA),
               tcodeH = pad2(tcodeH), tcodeA = pad2(tcodeA))
   f <- c()
