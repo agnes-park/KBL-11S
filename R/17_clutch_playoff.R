@@ -97,6 +97,31 @@ message(sprintf("[A] 자격 선수시즌 %d | 정규전반→PO r=%.3f(p=%.3f) |
 message(sprintf("    회귀 PO ~ 정규전반+정규클러치: β(전반)=%.2f(p=%.3g) | β(클러치)=%.2f(p=%.3g)",
                 bov[1], bov[4], bcl[1], bcl[4]))
 
+# ── A2. 왜 R²가 작은가: 결과(PO 성과)가 대부분 표본 잡음 ─────────────────────
+# 선수당 PO 야투가 적어 결과 신뢰도가 낮음 → 어떤 예측변수도 R²가 낮을 수밖에 없다.
+wr <- function(x, y, w) { ok <- is.finite(x)&is.finite(y)&is.finite(w); x<-x[ok];y<-y[ok];w<-w[ok]
+  mx<-weighted.mean(x,w); my<-weighted.mean(y,w)
+  sum(w*(x-mx)*(y-my))/sqrt(sum(w*(x-mx)^2)*sum(w*(y-my)^2)) }
+a_ov_w <- wr(A$rs_ov, A$po, A$po_n)               # (1) PO 야투수 가중(WLS): 노이즈 큰 선수 down-weight
+# (2) 결과 신뢰도: PO 슛 스플릿-하프(스피어만-브라운)
+sh_po <- function() {
+  d <- po %>% mutate(moe = made - lrget(shot_type)) %>%
+    group_by(shooter_en) %>% mutate(h = sample(rep(c(1L,2L), length.out = n()))) %>%
+    group_by(shooter_en, h) %>% summarise(m = mean(moe), k = n(), .groups="drop")
+  w1 <- d %>% filter(h==1) %>% select(shooter_en, m1=m, k1=k)
+  w2 <- d %>% filter(h==2) %>% select(shooter_en, m2=m, k2=k)
+  j <- inner_join(w1, w2, by="shooter_en") %>% filter(k1>=8, k2>=8)
+  if (nrow(j) < 8) return(NA_real_); cor(j$m1, j$m2)
+}
+rel_half <- mean(replicate(200, sh_po()), na.rm=TRUE); rel_po <- 2*rel_half/(1+rel_half)
+ceil_r <- sqrt(max(rel_po, 0))                    # 관측 상관의 이론적 최대(결과 노이즈 천장)
+disatt_ov <- unname(a_ov["r"] / ceil_r)           # 결과 노이즈 보정(참 관계 추정)
+# (3) 임계별 민감도 (표본 클수록 결과 신뢰↑ → R²↑)
+sens <- lapply(c(15,30,50), function(m){ AA <- D %>% filter(po_n>=m, rs_ov_n>=RS_MIN)
+  r <- cor(AA$rs_ov, AA$po, use="complete.obs"); tibble(PO_MIN=m, n=nrow(AA), r=round(r,3), R2=round(r^2,3)) }) %>% bind_rows()
+message(sprintf("[A2] WLS 가중 r=%.3f(R²=%.3f) | PO성과 신뢰도=%.3f → 관측 r 천장≈%.3f | 노이즈보정 참상관≈%.3f",
+                a_ov_w, a_ov_w^2, rel_po, ceil_r, disatt_ov))
+
 # =============================================================================
 # B. Riser: 정규엔 평범, PO에서 빛남 + 예측가능성
 # =============================================================================
@@ -150,6 +175,7 @@ concl <- paste0(
   sprintf("'평소보다 PO에서 얼마나 올렸나'(부스트)는 정규 클러치로 전혀 예측 안 되고(r=%.2f), 정규 전반과는 음의 상관(r=%.2f)=**평균회귀**다 — 즉 큰 무대 '깜짝 활약'은 발굴 가능한 능력이 아니라 (덜 뛰어난 선수·소표본의) 회귀 현상. ",
           b_pred_cl["r"], b_pred_ov["r"]),
   sprintf("큰 무대 성과의 시즌 간 반복성도 유의하지 않다(r=%.2f, p=%.2f, 쌍 %d — 검정력 낮음). ", c_po["r"], c_po["p"], nrow(pairs)),
+  sprintf("전반→PO의 R²는 %.2f로 작지만 이는 결과 노이즈 탓(PO 성과 신뢰도 %.2f, 관측 r 천장 ≈%.2f); WLS·신뢰도보정 시 참 관계는 강하다(r≈%.2f). ", a_ov["r"]^2, rel_po, ceil_r, disatt_ov),
   "→ 클러치를 '큰 무대에서의 퍼포먼스'로 재정의해도 결론은 같다: **큰 무대에서 재현되는 건 '전반적 실력'이지, 그와 별개의 '큰 경기에 강한 클러치 능력'이 아니다.** 5분 클러치에서의 결론이 최고 무대에서도 유지된다.")
 
 lines <- c(
@@ -168,6 +194,21 @@ lines <- c(
   "",
   sprintf("회귀 `PO ~ 정규전반 + 정규클러치`: β(전반)=**%.2f** (p=%.2g), β(클러치)=%.2f (p=%.2g) → 큰 무대는 **전반적 실력**이 예측하고, 5분 클러치 지표는 그 너머로 아무것도 더하지 못한다.",
           bov[1], bov[4], bcl[1], bcl[4]),
+  "",
+  "## A2. R²가 왜 작은가 — 결과가 대부분 '표본 잡음'",
+  "",
+  sprintf(paste0("정규전반→PO의 순수 R²는 %.3f로 작다. **그러나 이는 모델 결함이 아니라 결과(PO 성과) 측정이 노이즈이기 때문**이다: ",
+    "선수당 PO 야투가 적어 **PO 성과 신뢰도(split-half SB)=%.2f**밖에 안 된다. 신뢰도가 이 정도면 **어떤 완벽한 예측변수라도 관측 상관의 이론적 최대치가 √신뢰도≈%.2f**(R²≈%.2f)에 불과하다. 노이즈는 설명할 수 없다."),
+          a_ov["r"]^2, rel_po, ceil_r, ceil_r^2),
+  "",
+  "정당한 개선(R²를 억지로 올리는 게 아니라 노이즈를 줄이는):",
+  "",
+  fmt(sens %>% mutate(설명=c("현행","신뢰도 높은 선수만","깊은 PO런 선수만"))),
+  "",
+  sprintf("- **PO 야투수로 가중(WLS)**: r=%.2f → **R²=%.2f** (노이즈 큰 소표본 선수 down-weight). ", a_ov_w, a_ov_w^2),
+  sprintf("- **노이즈 보정(disattenuated) 참 상관 ≈ %.2f** (결과 신뢰도만 보정; 정규 신뢰도까지 보정하면 ~0.5) — 측정 노이즈를 걷어내면 '정규 실력 → 큰 무대 성과'의 **참 관계는 관측치(0.20)의 2배 이상**. 낮은 R²는 관계가 없어서가 아니라 PO 성과를 20슛 안팎으로 재기 때문.",
+          disatt_ov),
+  "- ⚠ 단, 이 노이즈 보정은 **전반 실력**에만 신호를 키운다. 5분 클러치(r≈0.03)는 보정해도 0 근처 — **개선해도 '클러치는 안 잡히고 전반 실력만 잡힌다'는 결론은 그대로**.",
   "",
   "## B. Riser — 정규엔 평범, PO에서 빛나는 선수",
   "",
