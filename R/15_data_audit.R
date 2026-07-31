@@ -23,7 +23,8 @@ KIND  <- Sys.getenv("PBP_KIND", "regular_season")   # 예: PBP_KIND=playoff
 norm  <- function(x) sub("\\.0$", "", trimws(as.character(x)))
 pad2  <- function(x) str_pad(norm(x), 2, pad = "0")
 
-report <- c("# KBL 데이터 수집 무결성 감사", "",
+report <- c(sprintf("# KBL 데이터 수집 무결성 감사%s",
+                    if (KIND == "regular_season") "" else sprintf(" (%s)", KIND)), "",
             "세 독립 점수 소스(일정 API / PBP 공식점수 / 이벤트 재구성) 삼중 교차검증 + 구조 점검.", "")
 flags_all <- c()
 
@@ -187,7 +188,9 @@ report <- c(report,
   "")
 
 dir.create("../docs", showWarnings=FALSE)
-writeLines(report, "../docs/data_audit_findings.md")
-message(sprintf("\n전체 삼중일치 %d/%d (%.1f%%) | 리포트: ../docs/data_audit_findings.md",
-                tot_triple, tot_games, 100*tot_triple/tot_games))
+OUTFILE <- if (KIND == "regular_season") "../docs/data_audit_findings.md" else
+           sprintf("../docs/data_audit_%s_findings.md", KIND)
+writeLines(report, OUTFILE)
+message(sprintf("\n전체 삼중일치 %d/%d (%.1f%%) | 리포트: %s",
+                tot_triple, tot_games, 100*tot_triple/tot_games, OUTFILE))
 message("── 데이터 감사 완료 ──")
