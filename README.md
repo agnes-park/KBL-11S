@@ -46,6 +46,24 @@ Rscript ../R/05_clutch_analysis.R # 클러치 존재검정 + 선수 순위
 시즌 간 지속성을 검정한다. 각 스크립트는 `SEASON_LABEL` 환경변수로 시즌을 바꿀 수 있다
 (예: `SEASON_LABEL=2025_26 Rscript ../R/01_preprocess.R`).
 
+## 플레이오프 수집 (로컬 실행)
+
+포스트시즌은 "정규시즌 더"와 질적으로 다른 무대(고압박·out-of-sample)라, RS→PO 이월
+검정 등에 유효하다. 크롤러는 정규 크롤러(`00`)의 검증된 헬퍼를 재사용한다.
+
+```bash
+# 사전: install.packages(c("httr2","jsonlite","dplyr","stringr","readr","tibble","tidyr"))
+./run_playoffs.sh            # 3시즌 PO 수집 → 삼중소스 무결성 검증
+# 또는 시즌별로:
+cd data
+SEASON_KEY=2024_25 Rscript ../R/00b_crawl_playoffs.R
+PBP_KIND=playoff  Rscript ../R/15_data_audit.R
+```
+
+⚠ **`api.kbl.or.kr` 에 접근 가능한 로컬에서 실행**할 것(관리형 원격 세션은 egress 정책으로
+차단될 수 있음). 첫 실행 시 콘솔의 "수신 카테고리 분포"로 플레이오프가 제대로 잡혔는지 확인.
+과거 시즌 추가는 `R/00b_crawl_playoffs.R`의 `PLAYOFF_MONTHS` + `run_playoffs.sh`의 `SEASONS`에.
+
 ## 현재 상태
 
 세 시즌(2023-24·2024-25·2025-26)·coarse xG 통합 완료. **반복 가능한 클러치 실력의
