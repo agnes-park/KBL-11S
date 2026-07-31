@@ -14,11 +14,15 @@
 library(dplyr); library(stringr); library(readr); library(tidyr)
 
 SEASON_LABEL <- Sys.getenv("SEASON_LABEL", "2024_25")   # ← 환경변수 또는 여기서 변경
-INPUT        <- sprintf("KBL_%s_regular_season_full_pbp.csv", SEASON_LABEL)
+PBP_KIND     <- Sys.getenv("PBP_KIND", "regular_season") # regular_season | playoff
+INPUT        <- sprintf("KBL_%s_%s_full_pbp.csv", SEASON_LABEL, PBP_KIND)
 
-STATE_FILE  <- sprintf("KBL_%s_state_table.csv", SEASON_LABEL)
-SHOTS_FILE  <- sprintf("KBL_%s_shots.csv",       SEASON_LABEL)
-PLAYER_FILE <- sprintf("KBL_%s_player_dim.csv",  SEASON_LABEL)
+# 산출물 접두: 정규시즌은 기존 이름 유지(하위호환), 그 외는 KIND 태그 부착
+OUT_PREFIX  <- if (PBP_KIND == "regular_season") sprintf("KBL_%s", SEASON_LABEL) else
+               sprintf("KBL_%s_%s", SEASON_LABEL, PBP_KIND)
+STATE_FILE  <- sprintf("%s_state_table.csv", OUT_PREFIX)
+SHOTS_FILE  <- sprintf("%s_shots.csv",       OUT_PREFIX)
+PLAYER_FILE <- sprintf("%s_player_dim.csv",  OUT_PREFIX)
 
 clean_code <- function(x) trimws(sub("\\.0$", "", as.character(x)))
 
