@@ -29,3 +29,6 @@ data/*_collection_failures.csv
 # OS / editor
 .DS_Store
 *~
+
+# Local chart outputs (charts belong in docs/img/)
+data/*.png
