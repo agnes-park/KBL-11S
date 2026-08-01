@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 20mm 16mm 18mm 16mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 9px; color:#94a3b8; } }
+  * { box-sizing: border-box; }
+  body { font-family: "NanumGothic","Nanum Gothic",sans-serif; color:#1e293b; font-size:11px; line-height:1.65; margin:0; }
+  h1,h2,h3 { font-family:"NanumGothic",sans-serif; color:#0f172a; line-height:1.3; }
+  .cover { text-align:center; padding:70mm 0 0 0; page-break-after:always; }
+  .cover .kicker { color:#ea580c; font-weight:800; letter-spacing:3px; font-size:12px; }
+  .cover h1 { font-size:30px; margin:14px 0 6px; }
+  .cover .sub { font-size:14px; color:#475569; margin-bottom:40px; }
+  .cover .oneliner { max-width:150mm; margin:0 auto; font-size:12.5px; color:#334155;
+    background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:16px 20px; line-height:1.7; }
+  .cover .meta { margin-top:34px; color:#94a3b8; font-size:10.5px; }
+  h2 { font-size:16px; border-bottom:2.5px solid #ea580c; padding-bottom:5px; margin:26px 0 12px;
+    page-break-after:avoid; }
+  h2 .num { color:#ea580c; }
+  h3 { font-size:12.5px; margin:16px 0 6px; color:#c2410c; page-break-after:avoid; }
+  p { margin:6px 0; }
+  ul { margin:6px 0 6px 0; padding-left:18px; }
+  li { margin:3px 0; }
+  table { border-collapse:collapse; width:100%; margin:9px 0; font-size:10px; page-break-inside:avoid; }
+  th,td { border:1px solid #e2e8f0; padding:5px 7px; text-align:center; }
+  th { background:#f1f5f9; color:#0f172a; font-weight:700; }
+  td.l,th.l { text-align:left; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  .key { background:#f0fdf4; border-left:4px solid #16a34a; border-radius:0 8px 8px 0;
+    padding:9px 14px; margin:10px 0; page-break-inside:avoid; }
+  .key b { color:#15803d; }
+  .warn { background:#fef2f2; border-left:4px solid #dc2626; border-radius:0 8px 8px 0; padding:8px 14px; margin:9px 0; }
+  .note { color:#64748b; font-size:9.5px; }
+  .big { background:#0f172a; color:#f8fafc; border-radius:12px; padding:18px 22px; margin:14px 0; page-break-inside:avoid; }
+  .big h2 { color:#fdba74; border:none; margin:0 0 8px; }
+  .big b { color:#fdba74; }
+  .pos { color:#16a34a; font-weight:700; }
+  .neg { color:#dc2626; font-weight:700; }
+  .section { page-break-inside:avoid; }
+  .tag { display:inline-block; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa;
+    border-radius:6px; padding:1px 7px; font-size:9px; font-weight:700; }
+  figure { margin:10px 0; page-break-inside:avoid; text-align:center; }
+  figure img { width:100%; max-width:165mm; border:1px solid #e2e8f0; border-radius:8px; }
+  figcaption { font-size:9px; color:#64748b; margin-top:3px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">KBL PLAY-BY-PLAY ANALYSIS</div>
+  <h1>KBL 클러치 슈터, 진짜 존재하는가</h1>
+  <div class="sub">3개 정규시즌 + 3개 플레이오프 · Play-by-Play 데이터 검증</div>
+  <div class="oneliner">
+    <b>결론 한 줄:</b> 축구 xG처럼 상황(점수차·시간)과 슛값을 보정해 "클러치 실력"을 수치화하고
+    시즌 간 반복성을 검정한 결과 — <b>반복 가능한 개인 클러치 실력의 증거는 없다.</b>
+    재현되는 것은 실력이 아니라 <b>역할·기회, 그리고 리그 전체가 받는 구조적 압박</b>이었다.
+  </div>
+  <div class="meta">데이터: 2023-24 · 2024-25 · 2025-26 (정규 각 270경기 + 플레이오프 61경기)<br>
+  분석 파이프라인: R (전처리 → WP모델 → 레버리지 → xG → 존재·지속성 검정)</div>
+</div>
+
+<!-- 1 -->
+<div class="section">
+<h2><span class="num">1.</span> 무엇을 분석했나 — 질문과 접근</h2>
+<p><b>핵심 질문은 "클러치 슈터가 있다/없다"가 아니다.</b> 최종 질문은
+<b>"선수 간 클러치 실력의 분산이 통계적으로 0에서 벗어나는가, 그리고 그것이 시즌 간 반복되는가"</b>이다.
+"대부분 운"이라는 결과도 유효한 발견으로 본다.</p>
+<p>클러치는 <b>(1) 쫓기는 시간 + (2) 쫓기는 점수</b>(종료 5분 이내 &amp; 점수차 ≤5)라는 압박 상황에서
+개인이 <b>평소 기대치를 넘어 상황을 타개하는 능력</b>으로 정의했다. 축구 xG의 발상을 빌려, 각 슛에서
+실제 득점이 기대 득점(리그·개인 기준선)보다 얼마나 높았는지를 <b>레버리지(승률 영향력)</b>로 가중해 합산했다.</p>
+<div class="key">검정의 핵심 시금석은 <b>"시즌 간 지속성"</b>이다. 한 시즌 잘한 게 우연이 아니라 실력이라면,
+다음 시즌에도 이어져야 한다. 존재검정(한 시즌 내 분산)이 통과해도 <b>지속성이 없으면 실력이 아니다.</b></div>
+</div>
+
+<!-- 2 -->
+<div class="section">
+<h2><span class="num">2.</span> 데이터와 무결성 검증</h2>
+<p>KBL 공식 API에서 3시즌 정규시즌(각 270경기)과 3시즌 플레이오프(총 61경기)의 play-by-play를 수집했다.
+크롤링 데이터의 신뢰성을 <b>세 개의 독립 소스</b>로 삼중 교차검증했다:
+① 일정 API 점수, ② PBP에 박힌 공식 점수, ③ 이벤트를 직접 합산한 재구성 점수.</p>
+<table>
+  <tr><th class="l">구분</th><th>경기 수</th><th>삼중 점수 일치</th><th>이벤트·코드·구조 점검</th></tr>
+  <tr><td class="l">정규시즌 (3시즌)</td><td>810</td><td><b>809 / 810 (99.9%)</b></td><td>모두 통과</td></tr>
+  <tr><td class="l">플레이오프 (3시즌)</td><td>61</td><td><b>61 / 61 (100%)</b></td><td>모두 통과</td></tr>
+</table>
+<p class="note">잔여 이상치 3종(1경기 상류 API 이벤트 누락, 2경기 <code>n</code> 시퀀스 결측이나 정렬키는 정상,
+1건 시간표기 오류)은 모두 국소적·무해로 확인. → <b>분석 결론에 영향을 주는 데이터 오류 없음.</b></p>
+</div>
+
+<!-- 3 -->
+<div class="section">
+<h2><span class="num">3.</span> 세 시즌 통합 — 존재검정과 지속성 <span class="tag">핵심</span></h2>
+<p>검정력을 높이기 위해 리그 기준선(WP σ·β, OReb, xG)은 세 시즌 <b>풀링</b>, 선수 단위는 <b>선수×시즌</b>으로
+유지했다. 크로스-시즌 일관성(러닝스코어 100/100/99.6%, 2·3점 성공률·OReb 시즌 편차 상식 범위)을
+먼저 확인해 풀링의 타당성을 검증했다.</p>
+<table>
+  <tr><th class="l">검정</th><th>결과</th><th>해석</th></tr>
+  <tr><td class="l">존재검정 (선수 간 분산 τ²)</td><td>ICC &lt; 0.02, 순열 p ≈ 0.03–0.05</td><td>한계적</td></tr>
+  <tr><td class="l"><b>시즌 간 지속성</b> (year-to-year)</td><td><b class="neg">r ≈ 0.02 (p ≈ 0.83)</b></td><td>지속성 없음</td></tr>
+  <tr><td class="l">스플릿-하프 신뢰도</td><td>SB ≈ 0.26</td><td>대부분 잡음</td></tr>
+</table>
+<div class="key"><b>결과:</b> 검정력을 3배로 키운 뒤에도 한 시즌 클러치 성과는 다음 시즌을 거의 예측하지 못했다
+(r ≈ 0.02). 풀링에서 보인 한계적 존재신호는 <b>지속성 검정을 통과하지 못한다</b> — 안정적 실력이 아니라
+시즌 내 변동·잡음.</p></div>
+<p class="note">방법론 하드윈: 원본 존재검정의 분산분해가 가중/비가중 스케일 불일치로 τ²와 순열검정이 어긋나던
+문제를 표준 불균형 일원 랜덤효과 추정량(τ̂²=(MSB−MSW)/n₀)으로 일치시켰다.</p>
+</div>
+
+<!-- 4 -->
+<div class="section">
+<h2><span class="num">4.</span> Clutch Score 지표 구현 + 양성 대조군</h2>
+<p>설계 문서의 Clutch Score(<code>PAE × 시간가중 × 점수차가중 × 상태변화가중</code>, 자유투 포함,
+<b>개인 비클러치 성공률</b> 기준)를 충실히 구현하고, 문서에 없던 존재·지속성 검정을 붙였다.</p>
+<table>
+  <tr><th class="l">검정</th><th>상관 / 유의성</th></tr>
+  <tr><td class="l">존재검정 (시도당 PAE·CS)</td><td>ICC ≈ 0.006, 순열 p ≈ 0.02–0.03 (한계적)</td></tr>
+  <tr><td class="l">시즌 간 지속성 (CS/시도당)</td><td class="neg">r = 0.08 (p = 0.40) — 없음</td></tr>
+  <tr><td class="l"><b>양성 대조군: 비클러치 FT%</b></td><td class="pos">r = 0.62 (p ≈ 0) — 강한 지속성</td></tr>
+</table>
+<div class="key"><b>가장 설득력 있는 대비:</b> 똑같은 방법으로 <b>자유투 실력(FT%)은 시즌 간 상관 0.62로 또렷이 재현</b>된다.
+즉 방법은 "진짜 실력"을 명확히 검출한다. 그런데 <b>클러치 효율은 지속성 0.</b> → "검정력이 없어서"가 아니라
+<b>클러치 효율이 실제로 반복되지 않는 것.</b></div>
+</div>
+
+<!-- 5 -->
+<div class="section">
+<h2><span class="num">5.</span> 재구성 — "없다"를 넘는 능동적 결론</h2>
+<p>질문 자체를 바꿔 긍정적으로 서술 가능한 결론을 도출했다.</p>
+
+<h3>5-1. 클러치 슈터 = 실력이 아니라 '역할·믿음'</h3>
+<table>
+  <tr><th class="l">관계 (선수×시즌, 연속 시즌)</th><th>상관 r</th><th>의미</th></tr>
+  <tr><td class="l">과거 클러치 <b>볼륨</b> → 미래 볼륨</td><td class="pos">0.69 (β=0.69)</td><td>역할은 강하게 지속</td></tr>
+  <tr><td class="l">과거 클러치 <b>효율</b> → 미래 효율</td><td class="neg">0.01</td><td>효율은 재현 안 됨</td></tr>
+  <tr><td class="l">과거 <b>효율</b> → 미래 <b>볼륨</b></td><td class="neg">0.03</td><td>효율로 역할 안 줌</td></tr>
+</table>
+<p>→ <b>팀은 효율 근거 없이 같은 선수에게 클러치 역할을 계속 맡긴다.</b> 클러치 슈터는 재현되는
+'역할·믿음'으로 존재하되, 그 믿음은 효율로 뒷받침되지 않는다.</p>
+
+<h3>5-2. 압박은 개인이 아니라 리그 전체의 구조적 현상</h3>
+<p>클러치 상황에서 리그 전체 야투 성공률이 유의하게 <b>하락</b>한다(3시즌 일관):
+<b class="neg">.446 → .405 (Δ−0.041, p = 6×10⁻⁹)</b>. 자유투는 평평(Δ−0.017, p=0.13). 자유투 유도율은 클러치에서
+약 2배(종반 고의 파울 포함). → 클러치는 특정 개인의 문제가 아니라 <b>수비 강화·압박으로 리그가 함께 겪는 구조</b>.</p>
+
+<h3>5-3. 자유투 청정검정 — 압박만 분리</h3>
+<p>조직적 '초킹' 증거 없음(p=0.13). 클러치 FT 성공은 <b>개인 평소 FT%로 설명</b>되고(β=2.28, p≈10⁻⁵),
+그 위의 클러치 FT 편차는 지속성 없음(r=0.03). → 가장 깨끗한 조건에서도 <b>평소 실력만 재현될 뿐, 별개의 클러치 능력은 없다.</b></p>
+
+<h3>5-4. 등가·상한 검정 + 승수 환산</h3>
+<p>"없다"를 넘어 <b>"있어도 무시 가능"을 증명</b>: 클러치 실력 SD의 95% 상한은 <b>0.064</b>(슛 1개 잡음 σ≈0.48의 1/7),
+지속성 상관 95% 상한 0.25. 레버리지를 승률(WP) 단위로 환산(0.189 WP/클러치슛)하면
+<b>재현 가능한 클러치 실력의 가치 ≤ 0.08승/시즌</b> — 로스터 판단 임계(0.5승)에 한참 못 미침.</p>
+
+<h3>5-5. 국적·팀 이질성</h3>
+<p>클러치 볼륨은 외국인에 더 집중(41.9% vs 38.3%, p=3×10⁻⁷)되나 FG% 하락은 국적 불문.
+외국인 클러치효율의 겉보기 지속성(r=0.54)은 <b>교란</b> — 비클러치 지속성이 더 높음(r=0.65) = '평소 잘 쏘는 선수'
+아티팩트이지 클러치 특이적 아님. 팀 클러치 성과 지속성 없음(r=−0.03)이나 최다슈터 점유율(평균 28%)은
+안정(r=0.71). → <b>모든 수준에서 재현되는 건 '실력'이 아니라 '역할·구조(누가 던지냐)'.</b></p>
+</div>
+
+<!-- 6 -->
+<div class="section">
+<h2><span class="num">6.</span> 명성 클러치 선수, 이름으로 확인</h2>
+<p>리그가 '클러치'로 부르는 선수들(대상 26 선수-시즌)의 그 시즌 내 백분위 평균:
+<b>볼륨 76위 / 효율 48위</b>. <b>많이 나서지만(상위) 효율은 딱 중간.</b> 이들끼리만 봐도 시즌 간 효율 상관
+r=−0.41(반복 안 됨), 볼륨 r=0.56(역할 유지).</p>
+<table>
+  <tr><th class="l">선수</th><th>클러치 볼륨 백분위 (23→24→25)</th><th>효율 백분위</th><th>비고</th></tr>
+  <tr><td class="l">이정현</td><td class="pos">100 / 99 / 96 (리그 최다급)</td><td class="neg">47 / 43 / 34</td><td>볼륨 최상위, 효율 중간 이하·하락</td></tr>
+  <tr><td class="l">김선형</td><td>82 / 96 / 84</td><td class="neg">34 / 31 / 41</td><td>평균 PAE 3시즌 모두 음수</td></tr>
+  <tr><td class="l">허훈</td><td>89 / 94 / 89</td><td>29 / 39 / 69</td><td>볼륨 고정, 효율 출렁</td></tr>
+</table>
+<p>효율 최상위 시즌을 찍은 오세근(96)·이재도(93)는 그게 <b>8~10시도짜리 소표본</b>이고 직전 시즌은 하위권.
+→ '클러치 명성'은 반복되는 성과가 아니라 <b>팀·팬이 부여한 역할·기대</b>에 가깝다.</p>
+</div>
+
+<!-- 7 -->
+<div class="section">
+<h2><span class="num">7.</span> 최종 시험대 — 큰 무대(플레이오프)</h2>
+<p>플레이오프는 리그에서 가장 압박이 큰 무대다. 클러치를 5분 창에 얽매지 않고 <b>'큰 무대에서의 개인 퍼포먼스'</b>
+자체로 보고, 같은 시즌 정규 → 플레이오프 전이를 검정했다.</p>
+<table>
+  <tr><th class="l">질문</th><th>결과</th></tr>
+  <tr><td class="l">정규 <b>전반 실력</b> → 플레이오프 성과</td><td class="pos">r = 0.20 (p = 0.02)</td></tr>
+  <tr><td class="l">정규 <b>5분 클러치</b> → 플레이오프 성과</td><td class="neg">r = 0.03 (p = 0.78)</td></tr>
+  <tr><td class="l">회귀에서 클러치가 전반 실력 너머 기여</td><td class="neg">β = 0.00 (p = 0.79) — 없음</td></tr>
+  <tr><td class="l">'PO에서 빛남'(부스트)을 사전 예측</td><td class="neg">클러치 r=0.01 / 전반 r=−0.30(평균회귀)</td></tr>
+</table>
+<div class="key"><b>큰 무대로 이어지는 건 "전반적으로 잘하는 선수"이지 "클러치 선수"가 아니다.</b>
+명성 클러치 선수의 플레이오프 부스트도 대부분 0 근처(이정현 25-26 PO 204시도 +0.03, 김선형 24-25 141시도 −0.08).</div>
+<p class="note">R²가 작은 이유: 플레이오프 성과의 측정 신뢰도가 0.25(선수당 ~20슛)라, 어떤 예측변수도 관측 상관
+최대치가 √0.25≈0.50에 불과 — 노이즈는 설명 불가. WLS 가중·신뢰도 보정 시 '정규 실력→큰 무대'의 참 관계는
+관측치(0.20)의 2배 이상으로 강하다. 반면 5분 클러치는 보정해도 0 근처 → 결론 불변.</p>
+</div>
+
+<!-- 8 -->
+<div class="section">
+<h2><span class="num">8.</span> 자유투 클러치 심층분석 — 압박만 분리한 청정 실험실 <span class="tag">심화</span></h2>
+<p>자유투는 난이도 고정·수비 무관이라 <b>순수 '압박' 효과만</b> 분리된다. 가장 설득력 있던 결과
+(자유투 '실력'의 재현성)를 확장해, 압박이 개인에게 다르게 작용하는지 세 각도로 파고들었다.</p>
+
+<h3>8-1. 리그 압박 그래디언트 — 압박이 세질수록 초킹하나?</h3>
+<figure><img src="img/ft_gradient.png">
+<figcaption>비클러치 72.1% → 종료 1분·2점차 68.3% → 플레이오프 클러치 65.4%. 신뢰구간이 겹쳐 통계적으로 유의하지 않은 미세한 하락 — 극적인 조직적 초킹은 없다.</figcaption></figure>
+
+<h3>8-2. 개인 클러치 FT — 별개의 '클러치 FT 능력'이 있나?</h3>
+<ul>
+  <li><b>평소 실력으로 설명됨</b>: 클러치 FT 성공 ~ 개인 평소 FT% 로지스틱 β=2.28 (p≈10⁻⁵).</li>
+  <li><b>존재검정</b>: 풀링 표본에선 선수 간 차이가 보이나(순열 p&lt;0.05), <b>지속성 검정에서 사라진다</b>(기준선 잡음·시즌 내 변동).</li>
+  <li><b>지속성</b>: 클러치 FT 초과분의 시즌 간 상관 <b class="neg">r=0.02</b> — 반복되지 않는다.</li>
+</ul>
+
+<h3>8-3. 무엇이 반복되나 — 지속성 비교 <span class="tag">핵심 그래프</span></h3>
+<figure><img src="img/persistence_bar.png">
+<figcaption>자유투 '실력'(비클러치 FT%, r=0.67)과 '역할'(클러치 볼륨, r=0.71)은 또렷이 반복되지만, 클러치 특이적 지표(FG 효율 0.18, FT 초과 0.02)는 0 근처.</figcaption></figure>
+<figure><img src="img/ft_persistence_scatter.png">
+<figcaption>양성 대조군: 비클러치 FT%는 시즌 t와 t+1이 뚜렷한 양의 상관(r=0.67) — 방법이 '진짜 실력'을 명확히 검출함을 시각적으로 확인.</figcaption></figure>
+
+<div class="key"><b>자유투 결론:</b> 가장 깨끗한 압박 검정에서도 (1) 압박이 세져도 리그 FT%는 사실상 안 떨어지고,
+(2) 클러치 FT는 개인 평소 실력으로 설명되며 별개의 클러치 요인은 지속성이 없다. 반면 자유투 실력 자체는
+<b>r=0.67로 명확히 재현</b>된다. → <b>'압박 속 개인 클러치 능력'은 존재 증거가 없고, 재현되는 건 평소 실력뿐이다.</b>
+방법이 실력을 또렷이 검출한다는 바로 그 점이 "검정력 부족" 반론을 차단한다.</div>
+</div>
+
+<!-- conclusion -->
+<div class="big">
+  <h2>종합 결론</h2>
+  <p><b>"클러치 슈터는 없다"가 아니라, 더 정확히는 —</b></p>
+  <ul>
+    <li><b>개인의 반복되는 클러치 실력은 검출되지 않는다.</b> 존재신호는 한계적이고 시즌 간 지속되지 않으며,
+    있어도 그 가치는 0.08승/시즌 이하로 무시 가능하다.</li>
+    <li><b>재현되는 것은 '역할'과 '기회'다.</b> 팀은 효율 근거 없이 같은 선수(특히 스타·외국인)에게 클러치 볼륨을
+    계속 몰아준다. 볼륨은 시즌 간 강하게 지속되지만(r≈0.7) 효율은 아니다(r≈0).</li>
+    <li><b>압박은 개인차가 아니라 구조다.</b> 클러치엔 리그 전체 야투 효율이 일괄 하락한다.</li>
+    <li><b>가장 깨끗한 조건(자유투)·가장 큰 무대(플레이오프)에서도 재현되는 건 '전반적 실력'뿐</b>,
+    그와 별개의 클러치 능력은 없다.</li>
+  </ul>
+  <p>→ 리그가 '클러치 슈터'라 부르는 것은 <b>반복되는 성과가 아니라 부여된 역할·믿음</b>이다.
+  방법이 진짜 실력(FT%·전반 슈팅)은 명확히 검출한다는 점이 이 결론을 단단하게 뒷받침한다.</p>
+</div>
+
+<!-- appendix -->
+<div class="section">
+<h2><span class="num">부록.</span> 방법·주의사항 (하드윈)</h2>
+<ul>
+  <li><b>WP 모델:</b> 확산 베이스라인 Φ((마진+β·공격권)/(σ·√잔여시간)). σ≈0.34, β≈0.20.</li>
+  <li><b>xG는 리그 기준선</b>(선수 개인 평균 아님 — 그러면 made−xg가 0이 됨). 클러치 상황은 xG에 넣지 않음(상쇄 방지).</li>
+  <li><b>이벤트 순서·정렬</b>은 항상 <code>(game_id, period, api_row_order)</code>로. <code>time_remaining</code>은 파생 이벤트에서 부정확.</li>
+  <li><b>어시스트(211)</b>는 특정 슛에 신뢰성 있게 귀속 불가 → 의도적으로 제외.</li>
+  <li><b>검정력의 다음 지렛대는 표본이 아니라 측정 품질</b>: 정규시즌을 더 모아도(r=0.1 검출에 ~15시즌 필요) 결론은
+  안 바뀜. 슛 난이도 보정(수동 xG)·플레이오프 확대가 유효.</li>
+</ul>
+<p class="note">전체 파이프라인·리포트·데이터는 저장소의 <code>R/</code>, <code>docs/</code>에 재현 가능하게 정리되어 있음.</p>
+</div>
+
+</body>
+</html>
