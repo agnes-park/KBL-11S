@@ -118,7 +118,8 @@ lead<-ft_rs%>%filter(clutch)%>%left_join(nc,by=c("season","en"))%>%group_by(kr,e
 # 그래프 (영문 라벨)
 # =============================================================================
 th<-theme_minimal(base_size=12)+theme(panel.grid.minor=element_blank(),
-  plot.title=element_text(face="bold",size=13), plot.subtitle=element_text(color="grey40",size=9))
+  plot.title=element_text(face="bold",size=13), plot.subtitle=element_text(color="grey40",size=9),
+  plot.background=element_rect(fill="white",color=NA), panel.background=element_rect(fill="white",color=NA))
 OR<-"#ea580c"; GN<-"#16a34a"; SL<-"#334155"
 
 # G1: 압박 그래디언트
@@ -131,7 +132,7 @@ p1<-ggplot(g1,aes(tier,pct))+
   labs(title="Under pressure, free-throw % dips only slightly",
        subtitle="Non-clutch 72% -> extreme pressure ~65-68% (CIs overlap): mild, non-significant decline.",
        x=NULL,y="Free-throw %")+th+theme(axis.text.x=element_text(angle=20,hjust=1))
-ggsave(file.path(IMG,"ft_gradient.png"),p1,width=7.2,height=3.6,dpi=150)
+ggsave(file.path(IMG,"ft_gradient.png"),p1,width=7.2,height=3.6,dpi=150, bg="white")
 
 # G2: 지속성 비교 막대 (핵심)
 pb<-tibble(metric=c("Non-clutch FT%\n(skill, control)","Clutch volume\n(role)",
@@ -147,7 +148,7 @@ p2<-ggplot(pb,aes(metric,r,fill=grp))+
   labs(title="What repeats season-to-season? Skill & role, not clutch.",
        subtitle="Year-to-year correlation. Green = reproducible skill/role; Orange = clutch-specific (~0).",
        x=NULL,y="year-to-year correlation r")+th
-ggsave(file.path(IMG,"persistence_bar.png"),p2,width=7.2,height=3.8,dpi=150)
+ggsave(file.path(IMG,"persistence_bar.png"),p2,width=7.2,height=3.8,dpi=150, bg="white")
 
 # G3: 비클러치 FT% 지속성 산점도 (양성 대조군)
 sc<-P_ftnc$pr
@@ -160,7 +161,7 @@ p3<-ggplot(sc,aes(y0,y1))+
   labs(title="Free-throw skill IS reproducible (positive control)",
        subtitle="Each point = a player. Non-clutch FT% in season t vs t+1. Point size = attempts.",
        x="Non-clutch FT%  (season t)",y="Non-clutch FT%  (season t+1)")+th
-ggsave(file.path(IMG,"ft_persistence_scatter.png"),p3,width=6.6,height=4,dpi=150)
+ggsave(file.path(IMG,"ft_persistence_scatter.png"),p3,width=6.6,height=4,dpi=150, bg="white")
 
 message("\n그래프 저장: ", IMG)
 

@@ -7,7 +7,8 @@ library(dplyr); library(stringr); library(readr); suppressMessages(library(ggplo
 IMG <- "../docs/img"; dir.create(IMG, showWarnings=FALSE, recursive=TRUE)
 SEASONS <- c("2023_24","2024_25","2025_26"); norm <- function(x) sub("\\.0$","",trimws(as.character(x)))
 th <- theme_minimal(base_size=12)+theme(panel.grid.minor=element_blank(),
-  plot.title=element_text(face="bold",size=13), plot.subtitle=element_text(color="grey40",size=9))
+  plot.title=element_text(face="bold",size=13), plot.subtitle=element_text(color="grey40",size=9),
+  plot.background=element_rect(fill="white",color=NA), panel.background=element_rect(fill="white",color=NA))
 OR<-"#ea580c"; GN<-"#16a34a"; SL<-"#334155"
 
 mdl <- readRDS("KBL_pooled_wp_model.rds"); sigma<-mdl$sigma; beta<-mdl$beta
@@ -30,7 +31,7 @@ p1 <- ggplot(cal, aes(pred, actual))+
   labs(title="Win-probability model is well calibrated",
        subtitle="Predicted WP vs actual home-win rate (dashed = perfect line).",
        x="Predicted win probability", y="Actual home-win rate")+th
-ggsave(file.path(IMG,"slide_wp_calibration.png"), p1, width=5.6, height=4.2, dpi=150)
+ggsave(file.path(IMG,"slide_wp_calibration.png"), p1, width=5.6, height=4.2, dpi=150, bg="white")
 
 # ── (2) 레버리지 상황별 ─────────────────────────────────────────────────────
 sh <- read_csv("KBL_pooled_shots_scored.csv", show_col_types=FALSE)
@@ -48,7 +49,7 @@ p2 <- ggplot(lev, aes(situ, LI, fill=situ))+
   labs(title="Clutch shots swing the game ~3x more than average",
        subtitle="Mean Leverage Index by situation (1 = average shot). Garbage-time shots barely matter.",
        x=NULL, y="Leverage Index (LI)")+th
-ggsave(file.path(IMG,"slide_leverage.png"), p2, width=6.4, height=4, dpi=150)
+ggsave(file.path(IMG,"slide_leverage.png"), p2, width=6.4, height=4, dpi=150, bg="white")
 
 # ── (3) 클러치 효율 지속성 산점도 (자유투 대조군과 짝) ───────────────────────
 wcor <- function(x,y,w){mx<-weighted.mean(x,w);my<-weighted.mean(y,w)
@@ -69,7 +70,7 @@ p3 <- ggplot(pr, aes(y0,y1))+
   labs(title="Clutch shooting does NOT repeat season-to-season",
        subtitle="Each point = a player. Clutch make-over-expected: season t vs t+1.",
        x="Clutch make-over-expected (season t)", y="Clutch make-over-expected (season t+1)")+th
-ggsave(file.path(IMG,"slide_clutch_scatter.png"), p3, width=6.6, height=4, dpi=150)
+ggsave(file.path(IMG,"slide_clutch_scatter.png"), p3, width=6.6, height=4, dpi=150, bg="white")
 
 message(sprintf("저장 완료. WP bins=%d | 레버리지 클러치 LI=%.2f | 클러치 지속성 r=%.2f (쌍 %d)",
                 nrow(cal), lev$LI[grepl("Clutch",lev$situ)], r_cl, nrow(pr)))
