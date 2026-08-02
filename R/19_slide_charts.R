@@ -72,5 +72,39 @@ p3 <- ggplot(pr, aes(y0,y1))+
        x="Clutch make-over-expected (season t)", y="Clutch make-over-expected (season t+1)")+th
 ggsave(file.path(IMG,"slide_clutch_scatter.png"), p3, width=6.6, height=4, dpi=150, bg="white")
 
-message(sprintf("저장 완료. WP bins=%d | 레버리지 클러치 LI=%.2f | 클러치 지속성 r=%.2f (쌍 %d)",
-                nrow(cal), lev$LI[grepl("Clutch",lev$situ)], r_cl, nrow(pr)))
+# ── (4) 구조적 압박: 클러치 vs 비클러치 리그 FG% (선수 아닌 리그 전체) ────────
+fg <- sh %>% filter(shot_value %in% c(2,3)) %>%
+  mutate(sit=ifelse(clutch_std,"Clutch","Non-clutch")) %>%
+  group_by(season, sit) %>% summarise(fg=mean(made), n=n(), .groups="drop") %>%
+  mutate(seas=recode(season,"2023_24"="2023-24","2024_25"="2024-25","2025_26"="2025-26"),
+         sit=factor(sit, levels=c("Non-clutch","Clutch")))
+pool <- sh %>% filter(shot_value %in% c(2,3)) %>%
+  summarise(cl=mean(made[clutch_std]), ncl=mean(made[!clutch_std]))
+p4 <- ggplot(fg, aes(seas, fg, fill=sit))+
+  geom_col(position=position_dodge(width=.7), width=.62)+
+  geom_text(aes(label=sprintf("%.1f%%",100*fg)), position=position_dodge(width=.7),
+            vjust=-0.4, size=3.4, fontface="bold")+
+  scale_fill_manual(values=c("Non-clutch"="#94a3b8","Clutch"=OR), name=NULL)+
+  scale_y_continuous(labels=function(x)paste0(100*x,"%"))+
+  coord_cartesian(ylim=c(0,0.52))+
+  labs(title="Pressure is structural, not individual",
+       subtitle=sprintf("Whole-league FG%% drops in the clutch, every season. Pooled: %.1f%% vs %.1f%% (-4.1 pts).",
+                        100*pool$ncl, 100*pool$cl),
+       x=NULL, y="League FG%")+th+theme(legend.position="top")
+ggsave(file.path(IMG,"slide_pressure_fg.png"), p4, width=6.8, height=4.2, dpi=150, bg="white")
+
+# ── (5) 등가·상한: 재현 가능한 클러치 실력의 승수 가치 ≤ 0.08승 vs 문턱 0.5승 ──
+bd <- tibble(lab=factor(c("Reproducible clutch skill\n(95% upper bound)","Threshold that would matter\n(SESOI)"),
+                        levels=c("Reproducible clutch skill\n(95% upper bound)","Threshold that would matter\n(SESOI)")),
+             wins=c(0.08, 0.5), col=c(OR,"#94a3b8"))
+p5 <- ggplot(bd, aes(lab, wins, fill=col))+
+  geom_col(width=.55)+ scale_fill_identity()+
+  geom_text(aes(label=sprintf("%.2f wins", wins)), vjust=-0.4, fontface="bold", size=4.2)+
+  coord_cartesian(ylim=c(0,0.6))+
+  labs(title="Even if clutch skill exists, it is negligibly small",
+       subtitle="Best-case season value of a repeatable clutch shooter, vs the smallest effect that would matter.",
+       x=NULL, y="Wins added per season")+th
+ggsave(file.path(IMG,"slide_bounds.png"), p5, width=6.6, height=4.2, dpi=150, bg="white")
+
+message(sprintf("저장 완료. WP bins=%d | 레버리지 클러치 LI=%.2f | 클러치 지속성 r=%.2f (쌍 %d) | 압박 %.3f→%.3f | 상한 0.08 vs 0.5",
+                nrow(cal), lev$LI[grepl("Clutch",lev$situ)], r_cl, nrow(pr), pool$ncl, pool$cl))
